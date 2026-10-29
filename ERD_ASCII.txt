@@ -1,0 +1,310 @@
+================================================================================
+                    ENTITY RELATIONSHIP DIAGRAM (ERD)
+                        Laundry App Database
+================================================================================
+
+Legend:
+  [TABLE]       = Entity/Table
+  ───►          = One-to-Many Relationship
+  ◄───►         = Many-to-Many Relationship (via junction table)
+  PK            = Primary Key
+  FK            = Foreign Key
+  UK            = Unique Key
+
+================================================================================
+
+                            ┌─────────────────────────┐
+                            │      PELANGGAN          │
+                            │─────────────────────────│
+                            │ PK  id_pelanggan (INT)  │
+                            │     nama (VARCHAR)      │
+                            │ UK  no_hp (VARCHAR)     │
+                            │     alamat (VARCHAR)    │
+                            │     created_at (STAMP)  │
+                            └───────────┬─────────────┘
+                                        │
+                                        │ 1
+                                        │
+                                        │ Membuat
+                                        │
+                                        │ N
+                            ┌───────────▼─────────────┐
+                            │       PESANAN           │
+                            │─────────────────────────│
+                            │ PK  id_pesanan (INT)    │
+                            │ FK  id_pelanggan (INT)  │
+                            │     tgl_masuk (DATETIME)│
+                            │     tgl_selesai (DATE)  │
+                            │     status_cucian (ENUM)│
+                            │     total (DECIMAL)     │
+                            └─┬──────────┬──────────┬─┘
+                              │          │          │
+                      ┌───────┘          │          └───────┐
+                      │                  │                  │
+                      │ 1                │ 1                │ 1
+                      │                  │                  │
+                      │ Berisi           │ Berisi           │ Memiliki
+                      │                  │                  │
+                      │ N                │ N                │ N
+        ┌─────────────▼─────────┐ ┌──────▼──────────┐ ┌────▼───────────────┐
+        │   DETAIL_LAYANAN      │ │  DETAIL_PRODUK  │ │    PEMBAYARAN      │
+        │───────────────────────│ │─────────────────│ │────────────────────│
+        │ PK  id_pesanan (INT)  │ │PK id_pesanan(INT│ │PK id_pembayaran(INT│
+        │ PK  id_layanan (INT)  │ │PK id_produk (INT│ │FK id_pesanan (INT) │
+        │     jumlah (DECIMAL)  │ │   qty (INT)     │ │   metode (ENUM)    │
+        │     harga_satuan (DEC)│ │   harga_satuan  │ │   jumlah (DECIMAL) │
+        │     subtotal (DECIMAL)│ │   subtotal (DEC)│ │   tgl_bayar (DATE) │
+        └─────────┬─────────────┘ └────────┬────────┘ │   status (ENUM)    │
+                  │                        │          └────────────────────┘
+                  │ N                      │ N
+                  │                        │
+                  │ Digunakan              │ Digunakan
+                  │ dalam                  │ dalam
+                  │                        │
+                  │ N                      │ N
+        ┌─────────▼─────────────┐ ┌────────▼──────────┐
+        │      LAYANAN          │ │      PRODUK       │
+        │───────────────────────│ │───────────────────│
+        │ PK  id_layanan (INT)  │ │PK id_produk (INT) │
+        │ FK  id_kategori (INT) │ │FK id_kategori(INT)│
+        │     nama_layanan (STR)│ │   nama_produk(STR)│
+        │     harga (DECIMAL)   │ │   harga (DECIMAL) │
+        │     satuan (ENUM)     │ │   stok (INT)      │
+        │     estimasi_hari(INT)│ └───────┬───────────┘
+        └───────────┬───────────┘         │
+                    │                     │
+                    │ N                   │ N
+                    │                     │
+                    │ Termasuk            │ Termasuk
+                    │ dalam               │ dalam
+                    │                     │
+                    │ 1                   │ 1
+            ┌───────▼─────────────────────▼───────┐
+            │           KATEGORI                  │
+            │─────────────────────────────────────│
+            │ PK  id_kategori (INT)               │
+            │ UK  nama_kategori (VARCHAR)         │
+            │     jenis (ENUM: LAYANAN|PRODUK)    │
+            └─────────────────────────────────────┘
+
+
+                    ┌────────────────────────────┐
+                    │ Tambahan untuk PESANAN:    │
+                    └────────────────────────────┘
+                                    
+                    ┌─────────────────────────┐
+                    │       PESANAN           │
+                    │─────────────────────────│
+                    │ PK  id_pesanan (INT)    │
+                    └─────────────┬───────────┘
+                                  │
+                                  │ 1
+                                  │
+                                  │ Memiliki
+                                  │
+                                  │ N
+                    ┌─────────────▼───────────┐
+                    │     PENGIRIMAN          │
+                    │─────────────────────────│
+                    │ PK  id_pengiriman (INT) │
+                    │ FK  id_pesanan (INT)    │
+                    │     jenis (ENUM)        │
+                    │     alamat (VARCHAR)    │
+                    │     biaya (DECIMAL)     │
+                    │     status (ENUM)       │
+                    └─────────────────────────┘
+
+================================================================================
+                         RELATIONSHIP SUMMARY
+================================================================================
+
+1. PELANGGAN ───► PESANAN
+   Type: One-to-Many (1:N)
+   Description: Satu pelanggan bisa membuat banyak pesanan
+   Foreign Key: pesanan.id_pelanggan → pelanggan.id_pelanggan
+
+2. PESANAN ◄───► LAYANAN (via DETAIL_LAYANAN)
+   Type: Many-to-Many (M:N)
+   Description: Pesanan bisa punya banyak layanan, layanan bisa di banyak pesanan
+   Junction Table: detail_layanan
+   Foreign Keys:
+     - detail_layanan.id_pesanan → pesanan.id_pesanan
+     - detail_layanan.id_layanan → layanan.id_layanan
+
+3. PESANAN ◄───► PRODUK (via DETAIL_PRODUK)
+   Type: Many-to-Many (M:N)
+   Description: Pesanan bisa punya banyak produk, produk bisa di banyak pesanan
+   Junction Table: detail_produk
+   Foreign Keys:
+     - detail_produk.id_pesanan → pesanan.id_pesanan
+     - detail_produk.id_produk → produk.id_produk
+
+4. KATEGORI ───► LAYANAN
+   Type: One-to-Many (1:N)
+   Description: Satu kategori bisa punya banyak layanan
+   Foreign Key: layanan.id_kategori → kategori.id_kategori
+
+5. KATEGORI ───► PRODUK
+   Type: One-to-Many (1:N)
+   Description: Satu kategori bisa punya banyak produk
+   Foreign Key: produk.id_kategori → kategori.id_kategori
+
+6. PESANAN ───► PEMBAYARAN
+   Type: One-to-Many (1:N)
+   Description: Satu pesanan bisa punya banyak pembayaran (cicilan)
+   Foreign Key: pembayaran.id_pesanan → pesanan.id_pesanan
+
+7. PESANAN ───► PENGIRIMAN
+   Type: One-to-Many (1:N)
+   Description: Satu pesanan bisa punya banyak pengiriman (jemput & antar)
+   Foreign Key: pengiriman.id_pesanan → pesanan.id_pesanan
+
+================================================================================
+                         CARDINALITY NOTATION
+================================================================================
+
+Simbol Cardinality:
+  1     = Exactly one
+  0..1  = Zero or one
+  N     = Many (one or more)
+  0..N  = Zero or many
+
+Detailed Cardinality:
+
+PELANGGAN (1) ────────────────► (0..N) PESANAN
+  - Setiap pelanggan WAJIB ada (baru bisa bikin pesanan)
+  - Pelanggan bisa punya 0 atau banyak pesanan
+
+PESANAN (1) ─────────────────► (0..N) DETAIL_LAYANAN
+  - Setiap pesanan WAJIB ada
+  - Pesanan bisa punya 0 atau banyak detail layanan
+
+PESANAN (1) ─────────────────► (0..N) DETAIL_PRODUK
+  - Setiap pesanan WAJIB ada
+  - Pesanan bisa punya 0 atau banyak detail produk
+
+LAYANAN (1) ──────────────────► (0..N) DETAIL_LAYANAN
+  - Setiap layanan WAJIB ada
+  - Layanan bisa belum atau sudah dipakai di banyak pesanan
+
+PRODUK (1) ───────────────────► (0..N) DETAIL_PRODUK
+  - Setiap produk WAJIB ada
+  - Produk bisa belum atau sudah terjual di banyak pesanan
+
+KATEGORI (1) ─────────────────► (0..N) LAYANAN
+  - Setiap kategori WAJIB ada
+  - Kategori bisa punya 0 atau banyak layanan
+
+KATEGORI (1) ─────────────────► (0..N) PRODUK
+  - Setiap kategori WAJIB ada
+  - Kategori bisa punya 0 atau banyak produk
+
+PESANAN (1) ──────────────────► (0..N) PEMBAYARAN
+  - Setiap pesanan WAJIB ada
+  - Pesanan bisa belum dibayar atau punya banyak pembayaran
+
+PESANAN (1) ──────────────────► (0..N) PENGIRIMAN
+  - Setiap pesanan WAJIB ada
+  - Pesanan bisa tanpa pengiriman atau punya banyak pengiriman
+
+================================================================================
+                         BUSINESS RULES
+================================================================================
+
+1. Setiap PESANAN harus punya minimal 1 PELANGGAN
+2. PESANAN bisa punya kombinasi LAYANAN dan/atau PRODUK
+3. DETAIL_LAYANAN dan DETAIL_PRODUK mencatat harga saat transaksi (snapshot)
+4. PEMBAYARAN bisa dilakukan bertahap (cicilan)
+5. PENGIRIMAN bisa ada 2 jenis: jemput dan antar
+6. Total PESANAN = SUM(detail_layanan.subtotal) + SUM(detail_produk.subtotal) + SUM(pengiriman.biaya)
+7. PRODUK.stok berkurang otomatis saat DETAIL_PRODUK dibuat (via trigger)
+8. PESANAN.status_cucian flow: diterima → dicuci → disetrika → siap → selesai
+9. PESANAN.tgl_selesai otomatis terisi saat status menjadi 'selesai'
+10. KATEGORI.jenis membedakan apakah untuk LAYANAN atau PRODUK
+
+================================================================================
+                         CONSTRAINTS
+================================================================================
+
+Primary Keys (PK):
+  - pelanggan.id_pelanggan
+  - kategori.id_kategori
+  - layanan.id_layanan
+  - produk.id_produk
+  - pesanan.id_pesanan
+  - detail_layanan (id_pesanan, id_layanan) - Composite PK
+  - detail_produk (id_pesanan, id_produk) - Composite PK
+  - pembayaran.id_pembayaran
+  - pengiriman.id_pengiriman
+
+Unique Keys (UK):
+  - pelanggan.no_hp
+  - kategori.nama_kategori
+
+Foreign Keys (FK):
+  - pesanan.id_pelanggan → pelanggan.id_pelanggan
+  - layanan.id_kategori → kategori.id_kategori
+  - produk.id_kategori → kategori.id_kategori
+  - detail_layanan.id_pesanan → pesanan.id_pesanan
+  - detail_layanan.id_layanan → layanan.id_layanan
+  - detail_produk.id_pesanan → pesanan.id_pesanan
+  - detail_produk.id_produk → produk.id_produk
+  - pembayaran.id_pesanan → pesanan.id_pesanan
+  - pengiriman.id_pesanan → pesanan.id_pesanan
+
+Check Constraints:
+  - harga > 0 (layanan, produk, pembayaran)
+  - stok >= 0 (produk)
+  - jumlah > 0 (detail_layanan, detail_produk)
+  - qty > 0 (detail_produk)
+  - estimasi_hari > 0 (layanan)
+  - biaya >= 0 (pengiriman)
+
+Referential Actions:
+  - ON UPDATE CASCADE: Perubahan di parent otomatis update child
+  - ON DELETE RESTRICT: Tidak bisa delete parent jika ada child (master data)
+  - ON DELETE CASCADE: Delete child otomatis saat parent dihapus (transaction)
+
+================================================================================
+                         INDEX RECOMMENDATIONS
+================================================================================
+
+Recommended Indexes (for performance):
+
+1. pesanan(id_pelanggan) - For filtering by customer
+2. pesanan(status_cucian) - For filtering by status
+3. pesanan(tgl_masuk) - For date range queries
+4. detail_layanan(id_layanan) - For reverse lookup
+5. detail_produk(id_produk) - For reverse lookup
+6. pembayaran(id_pesanan) - Already has FK index
+7. produk(stok) - For low stock queries
+8. pelanggan(no_hp) - Already UNIQUE (auto-indexed)
+
+================================================================================
+                    DATABASE STATISTICS (Current Data)
+================================================================================
+
+Total Tables: 9
+Total Relationships: 7 (One-to-Many) + 2 (Many-to-Many)
+Junction Tables: 2 (detail_layanan, detail_produk)
+
+Sample Data Counts:
+  - pelanggan: 5 records
+  - kategori: 5 records
+  - layanan: 6 records
+  - produk: 6 records
+  - pesanan: 5 records
+  - detail_layanan: 7 records
+  - detail_produk: 4 records
+  - pembayaran: 3 records
+  - pengiriman: 4 records
+
+================================================================================
+                         END OF ERD DOCUMENTATION
+================================================================================
+
+Generated: 2026-10-29
+Database: laundry_db (MySQL 8.0+)
+Application: Laundry App
+Architecture: Clean Architecture with DDD, CQRS, Unit of Work
+ORM: Prisma
