@@ -1,0 +1,55 @@
+<%- include('../partials/header', { title: 'Pelanggan' }) %>
+
+<div class="top">
+  <div>
+    <h1>Pelanggan</h1>
+    <p class="sub"><%= rows.length %> pelanggan terdaftar</p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn" href="/pelanggan/tambah"><svg class="ic"><use href="#i-tambah"/></svg>Tambah Pelanggan</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<% if (success) { %>
+  <div class="alert"><%= success %></div>
+<% } %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nama</th>
+      <th>No. HP</th>
+      <th>Alamat</th>
+      <th>Terdaftar</th>
+      <th style="text-align:right">Aksi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (rows.length === 0) { %>
+      <tr>
+        <td colspan="5" style="text-align: center;"><p class="empty">Belum ada data pelanggan</p></td>
+      </tr>
+    <% } else { %>
+      <% rows.forEach(row => { %>
+        <tr>
+          <td><b><%= row.nama %></b></td>
+          <td><%= row.no_hp %></td>
+          <td><%= row.alamat %></td>
+          <td><%= new Date(row.created_at).toLocaleDateString('id-ID') %></td>
+          <td style="text-align:right">
+            <a href="/pelanggan/<%= row.id_pelanggan %>/edit" class="btn-link">Edit</a>
+            <form method="POST" action="/pelanggan/<%= row.id_pelanggan %>/hapus" style="display: inline;" onsubmit="return confirm('Yakin ingin menghapus pelanggan ini?')">
+              <button type="submit" class="link-danger">Hapus</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,134 @@
+<%- include('partials/header', { title: 'Dashboard' }) %>
+<%
+  const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+  const ringkas = n => n === 0 ? '0' : n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + ' jt' : Math.round(n / 1e3) + ' rb';
+  const ymax = data => {
+    const m = Math.max(0, ...data.map(d => d.nilai));
+    const step = m >= 1e6 ? 5e5 : 5e4;
+    return Math.max(step * 2, Math.ceil(m / step) * step);
+  };
+  const statusBayar = p => p.dibayar >= p.total && p.total > 0 ? ['Lunas', ''] : p.dibayar > 0 ? ['Sebagian', 'warn'] : ['Belum bayar', 'bad'];
+  const kelasStatus = s => ({ diterima: 'mute', dicuci: 'warn', disetrika: 'warn', siap: '', selesai: '' }[s] || '');
+  const maxOmzet = Math.max(1, ...terlaris.map(t => Number(t.omzet)));
+%>
+
+<div class="top">
+  <div>
+    <h1>Dashboard Laundry</h1>
+    <p class="sub">Ringkasan pesanan, pembayaran, dan stok</p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn" href="/laporan"><svg class="ic"><use href="#i-unduh"/></svg>Laporan</a>
+    <a class="pill-btn" href="/pesanan/baru"><svg class="ic"><use href="#i-tambah"/></svg>Pesanan baru</a>
+    <a class="pill-btn" href="/produk"><svg class="ic"><use href="#i-bel"/></svg>Stok menipis: <%= stok.length %></a>
+  </div>
+</div>
+
+<div class="cards">
+  <!-- Pesanan terbaru -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Pesanan terbaru</h2><p class="sub">5 pesanan masuk terakhir</p></div>
+      <a class="dots" href="/pesanan" aria-label="Semua pesanan"><svg class="ic"><use href="#i-dots"/></svg></a>
+    </div>
+    <% if (!terbaru.length) { %><p class="empty">Belum ada pesanan.</p><% } %>
+    <% terbaru.forEach(p => { %>
+      <a class="row" href="/pesanan/<%= p.id_pesanan %>" style="text-decoration:none">
+        <div class="av"><%= p.nama.charAt(0).toUpperCase() %></div>
+        <div class="who"><b><%= p.nama %></b><small>#<%= p.id_pesanan %> · <%= rp(p.total) %></small></div>
+        <span class="pill <%= kelasStatus(p.status_cucian) %>"><%= p.status_cucian %></span>
+      </a>
+    <% }) %>
+  </section>
+
+  <!-- Status pembayaran -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Pembayaran</h2><p class="sub">Status tagihan pesanan terbaru</p></div>
+      <a class="dots" href="/pembayaran" aria-label="Semua pembayaran"><svg class="ic"><use href="#i-dots"/></svg></a>
+    </div>
+    <% if (!bayar.length) { %><p class="empty">Belum ada tagihan.</p><% } %>
+    <% bayar.forEach(p => { const [label, kelas] = statusBayar(p); %>
+      <div class="row">
+        <div class="av round soft"><%= p.nama.charAt(0).toUpperCase() %></div>
+        <div class="who"><b><%= p.nama %></b><small><%= rp(p.total) %></small></div>
+        <span class="pill <%= kelas %>"><%= label %></span>
+      </div>
+    <% }) %>
+  </section>
+
+  <!-- Stok menipis -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Stok menipis</h2><p class="sub">Produk dengan stok di bawah 5</p></div>
+      <a class="dots" href="/produk" aria-label="Semua produk"><svg class="ic"><use href="#i-dots"/></svg></a>
+    </div>
+    <% if (!stok.length) { %><p class="empty">Semua stok aman.</p><% } %>
+    <% stok.forEach(s => { %>
+      <div class="row">
+        <div class="av round"><%= s.nama_produk.charAt(0).toUpperCase() %></div>
+        <div class="who"><b><%= s.nama_produk %></b><small><%= s.nama_kategori %></small></div>
+        <span class="pill <%= s.stok <= 1 ? 'bad' : 'warn' %>">Sisa <%= s.stok %></span>
+      </div>
+    <% }) %>
+  </section>
+</div>
+
+<div class="cards two">
+  <!-- Grafik omzet -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Omzet 6 bulan</h2><p class="sub">Per bulan, dalam rupiah</p></div>
+      <div class="seg" id="seg">
+        <% series.forEach((s, i) => { %>
+          <button type="button" data-key="<%= s.key %>" class="<%= i === 0 ? 'on' : '' %>"><%= s.label %></button>
+        <% }) %>
+      </div>
+    </div>
+    <% series.forEach((s, i) => { const top = ymax(s.data); %>
+      <div class="series" data-series="<%= s.key %>" <%= i ? 'hidden' : '' %>>
+        <div class="yl">
+          <% [1, .75, .5, .25, 0].forEach(f => { %><span><%= ringkas(top * f) %></span><% }) %>
+        </div>
+        <div class="cols">
+          <% s.data.forEach(d => { %>
+            <div class="col" title="<%= d.bulan %>: <%= rp(d.nilai) %>"><i <%- `style="height:${Math.round(d.nilai / top * 100)}%"` %>></i></div>
+          <% }) %>
+        </div>
+        <div class="xl"><% s.data.forEach(d => { %><span><%= d.bulan %></span><% }) %></div>
+      </div>
+    <% }) %>
+  </section>
+
+  <!-- Layanan terlaris -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Layanan terlaris</h2><p class="sub">Berdasarkan omzet</p></div>
+      <a class="dots" href="/laporan" aria-label="Laporan lengkap"><svg class="ic"><use href="#i-dots"/></svg></a>
+    </div>
+    <div class="grid-row thead"><span>Layanan</span><span>Kategori</span><span>Porsi omzet</span><span style="text-align:right">Omzet</span></div>
+    <% if (!terlaris.length) { %><p class="empty">Belum ada data penjualan.</p><% } %>
+    <% terlaris.forEach(t => { const persen = Math.round(Number(t.omzet) / maxOmzet * 100); %>
+      <div class="grid-row trow">
+        <div class="nm">
+          <div class="av soft"><svg class="ic"><use href="#i-layanan"/></svg></div>
+          <div><b><%= t.nama_layanan %></b><small>Estimasi <%= t.estimasi_hari %> hari</small></div>
+        </div>
+        <span><%= t.nama_kategori %></span>
+        <div class="bar"><span><%= Number(t.jml) %></span><div class="t"><i <%- `style="width:${persen}%"` %>></i></div><span><%= persen %>%</span></div>
+        <div class="val"><%= ringkas(Number(t.omzet)) %></div>
+      </div>
+    <% }) %>
+  </section>
+</div>
+
+<script>
+  // Ganti seri grafik (Layanan / Produk)
+  document.getElementById('seg').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b === btn));
+    document.querySelectorAll('.series').forEach(s => { s.hidden = s.dataset.series !== btn.dataset.key; });
+  });
+</script>
+<%- include('partials/footer') %>

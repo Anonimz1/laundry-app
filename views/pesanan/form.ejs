@@ -1,0 +1,102 @@
+<%- include('../partials/header', { title: 'Buat Pesanan' }) %>
+
+<div class="top">
+  <div>
+    <h1>Buat Pesanan Baru</h1>
+    <p class="sub">Daftarkan pesanan laundry baru</p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn mute" href="/pesanan">← Kembali</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<form action="/pesanan" method="POST" class="form">
+  <section class="card">
+    <h3>1. Informasi Pelanggan</h3>
+    <div class="form-group">
+      <label for="id_pelanggan">Pilih Pelanggan *</label>
+      <select id="id_pelanggan" name="id_pelanggan" required>
+        <option value="">-- Pilih Pelanggan --</option>
+        <% pelanggan.forEach(p => { %>
+          <option value="<%= p.id_pelanggan %>"><%= p.nama %> (<%= p.no_hp %>)</option>
+        <% }); %>
+      </select>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>2. Pilih Layanan</h3>
+    <div id="layanan-container">
+      <% layanan.forEach((l, index) => { %>
+        <div class="form-row" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+          <label style="flex: 1; margin: 0;">
+            <input type="checkbox" name="layanan_ids" value="<%= l.id_layanan %>" onchange="toggleLayanan(this, <%= index %>)">
+            <b><%= l.nama_layanan %></b> - Rp <%= Number(l.harga).toLocaleString('id-ID') %>/<%= l.satuan %>
+          </label>
+          <input type="number" id="layanan_jumlah_<%= index %>" name="layanan_jumlah" step="0.01" min="0.1" placeholder="Jumlah" disabled style="width: 120px;">
+        </div>
+      <% }); %>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>3. Pilih Produk (Opsional)</h3>
+    <div id="produk-container">
+      <% if (produk.length === 0) { %>
+        <p class="empty">Tidak ada produk tersedia</p>
+      <% } else { %>
+        <% produk.forEach((pr, index) => { %>
+          <div class="form-row" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+            <label style="flex: 1; margin: 0;">
+              <input type="checkbox" name="produk_ids" value="<%= pr.id_produk %>" onchange="toggleProduk(this, <%= index %>)">
+              <b><%= pr.nama_produk %></b> - Rp <%= Number(pr.harga).toLocaleString('id-ID') %> <small>(Stok: <%= pr.stok %>)</small>
+            </label>
+            <input type="number" id="produk_qty_<%= index %>" name="produk_qty" min="1" max="<%= pr.stok %>" placeholder="Qty" disabled style="width: 100px;">
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>4. Pengiriman</h3>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="perlu_antar" value="ya" onchange="toggleAlamat(this)">
+        Perlu Antar (+ Rp 5.000)
+      </label>
+      <textarea id="alamat_antar" name="alamat_antar" rows="2" placeholder="Alamat pengantaran" disabled style="margin-top: 10px;"></textarea>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button type="submit" class="pill-btn"><svg class="ic"><use href="#i-tambah"/></svg>Buat Pesanan</button>
+    <a href="/pesanan" class="pill-btn mute">Batal</a>
+  </div>
+</form>
+
+<script>
+  function toggleLayanan(checkbox, index) {
+    const input = document.getElementById('layanan_jumlah_' + index);
+    input.disabled = !checkbox.checked;
+    if (!checkbox.checked) input.value = '';
+  }
+
+  function toggleProduk(checkbox, index) {
+    const input = document.getElementById('produk_qty_' + index);
+    input.disabled = !checkbox.checked;
+    if (!checkbox.checked) input.value = '';
+  }
+
+  function toggleAlamat(checkbox) {
+    const textarea = document.getElementById('alamat_antar');
+    textarea.disabled = !checkbox.checked;
+    if (!checkbox.checked) textarea.value = '';
+  }
+</script>
+
+<%- include('../partials/footer') %>

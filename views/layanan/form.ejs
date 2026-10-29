@@ -1,0 +1,59 @@
+<%- include('../partials/header', { title: (data.id_layanan ? 'Edit' : 'Tambah') + ' Layanan' }) %>
+
+<div class="top">
+  <div>
+    <h1><%= data.id_layanan ? 'Edit' : 'Tambah' %> Layanan</h1>
+    <p class="sub"><%= data.id_layanan ? 'Ubah data layanan' : 'Daftarkan layanan baru' %></p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn mute" href="/layanan">← Kembali</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<form action="<%= data.id_layanan ? `/layanan/${data.id_layanan}/edit` : '/layanan' %>" method="POST" class="form card">
+  <div class="form-group">
+    <label for="id_kategori">Kategori *</label>
+    <select id="id_kategori" name="id_kategori" required>
+      <option value="">-- Pilih Kategori --</option>
+      <% kategori.forEach(k => { %>
+        <option value="<%= k.id_kategori %>" <%= data.id_kategori == k.id_kategori ? 'selected' : '' %>>
+          <%= k.nama_kategori %>
+        </option>
+      <% }); %>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="nama_layanan">Nama Layanan *</label>
+    <input type="text" id="nama_layanan" name="nama_layanan" value="<%= data.nama_layanan %>" required placeholder="Contoh: Cuci + Setrika Express">
+  </div>
+
+  <div class="form-group">
+    <label for="harga">Harga (Rp) *</label>
+    <input type="number" id="harga" name="harga" value="<%= data.harga %>" min="1" step="0.01" required placeholder="10000">
+  </div>
+
+  <div class="form-group">
+    <label for="satuan">Satuan *</label>
+    <select id="satuan" name="satuan" required>
+      <option value="kg" <%= data.satuan === 'kg' ? 'selected' : '' %>>Kilogram (kg)</option>
+      <option value="pcs" <%= data.satuan === 'pcs' ? 'selected' : '' %>>Pieces (pcs)</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="estimasi_hari">Estimasi (hari) *</label>
+    <input type="number" id="estimasi_hari" name="estimasi_hari" value="<%= data.estimasi_hari %>" min="1" required placeholder="3">
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="pill-btn"><svg class="ic"><use href="#i-tambah"/></svg><%= data.id_layanan ? 'Update Data' : 'Simpan Layanan' %></button>
+    <a href="/layanan" class="pill-btn mute">Batal</a>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

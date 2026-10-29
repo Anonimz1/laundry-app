@@ -1,0 +1,219 @@
+<%- include('../partials/header', { title: 'Detail Pesanan #' + pesanan.id_pesanan }) %>
+
+<div class="top">
+  <div>
+    <h1>Detail Pesanan #<%= pesanan.id_pesanan %></h1>
+    <p class="sub"><%= pesanan.nama_pelanggan %> · <%= pesanan.no_hp %></p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn mute" href="/pesanan">← Kembali</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<% if (success) { %>
+  <div class="alert"><%= success %></div>
+<% } %>
+
+<div class="cards two" style="margin-bottom: 20px;">
+  <!-- Info Pelanggan -->
+  <section class="card">
+    <h3>Informasi Pelanggan</h3>
+    <div class="row" style="padding: 0.75rem 0; border-bottom: 1px solid var(--line);">
+      <div class="av"><%= pesanan.nama_pelanggan.charAt(0).toUpperCase() %></div>
+      <div class="who">
+        <b><%= pesanan.nama_pelanggan %></b>
+        <small><%= pesanan.no_hp %></small>
+      </div>
+    </div>
+    <div style="padding: 0.75rem 0;">
+      <small style="color: var(--muted);">Alamat</small>
+      <p style="margin: 0.25rem 0 0;"><%= pesanan.alamat_pelanggan %></p>
+    </div>
+  </section>
+
+  <!-- Status Pesanan -->
+  <section class="card">
+    <h3>Status Pesanan</h3>
+    <table class="info-table">
+      <tr>
+        <td><small>Tanggal Masuk</small></td>
+        <td><b><%= new Date(pesanan.tgl_masuk).toLocaleDateString('id-ID') %></b></td>
+      </tr>
+      <tr>
+        <td><small>Tanggal Selesai</small></td>
+        <td><b><%= pesanan.tgl_selesai ? new Date(pesanan.tgl_selesai).toLocaleDateString('id-ID') : '-' %></b></td>
+      </tr>
+      <tr>
+        <td><small>Status Cucian</small></td>
+        <td>
+          <span class="pill <%= 
+            pesanan.status_cucian === 'selesai' ? '' : 
+            pesanan.status_cucian === 'siap' ? '' : 
+            pesanan.status_cucian === 'diterima' ? 'mute' : 
+            'warn' 
+          %>">
+            <%= pesanan.status_cucian %>
+          </span>
+        </td>
+      </tr>
+    </table>
+
+    <form action="/pesanan/<%= pesanan.id_pesanan %>/status" method="POST" style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
+      <select name="status_cucian" required style="flex: 1; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; font-family: inherit;">
+        <option value="diterima" <%= pesanan.status_cucian === 'diterima' ? 'selected' : '' %>>Diterima</option>
+        <option value="dicuci" <%= pesanan.status_cucian === 'dicuci' ? 'selected' : '' %>>Dicuci</option>
+        <option value="disetrika" <%= pesanan.status_cucian === 'disetrika' ? 'selected' : '' %>>Disetrika</option>
+        <option value="siap" <%= pesanan.status_cucian === 'siap' ? 'selected' : '' %>>Siap</option>
+        <option value="selesai" <%= pesanan.status_cucian === 'selesai' ? 'selected' : '' %>>Selesai</option>
+      </select>
+      <button type="submit" class="pill-btn primary">Update Status</button>
+    </form>
+  </section>
+</div>
+
+<% if (detail_layanan.length > 0) { %>
+  <section class="card" style="margin-bottom: 20px;">
+    <h3>Detail Layanan</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Layanan</th>
+          <th>Jumlah</th>
+          <th>Harga Satuan</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% detail_layanan.forEach(dl => { %>
+          <tr>
+            <td><b><%= dl.nama_layanan %></b></td>
+            <td><%= dl.jumlah %> <%= dl.satuan %></td>
+            <td>Rp <%= Number(dl.harga_satuan).toLocaleString('id-ID') %></td>
+            <td style="text-align:right"><b>Rp <%= Number(dl.subtotal).toLocaleString('id-ID') %></b></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </section>
+<% } %>
+
+<% if (detail_produk.length > 0) { %>
+  <section class="card" style="margin-bottom: 20px;">
+    <h3>Detail Produk</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Produk</th>
+          <th>Qty</th>
+          <th>Harga Satuan</th>
+          <th style="text-align:right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% detail_produk.forEach(dp => { %>
+          <tr>
+            <td><b><%= dp.nama_produk %></b></td>
+            <td><%= dp.qty %></td>
+            <td>Rp <%= Number(dp.harga_satuan).toLocaleString('id-ID') %></td>
+            <td style="text-align:right"><b>Rp <%= Number(dp.subtotal).toLocaleString('id-ID') %></b></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </section>
+<% } %>
+
+<% if (pengiriman.length > 0) { %>
+  <section class="card" style="margin-bottom: 20px;">
+    <h3>Pengiriman</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Jenis</th>
+          <th>Alamat</th>
+          <th>Biaya</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pengiriman.forEach(pg => { %>
+          <tr>
+            <td><%= pg.jenis %></td>
+            <td><%= pg.alamat %></td>
+            <td>Rp <%= Number(pg.biaya).toLocaleString('id-ID') %></td>
+            <td><span class="pill <%= pg.status === 'terkirim' ? '' : 'warn' %>"><%= pg.status %></span></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </section>
+<% } %>
+
+<section class="card">
+  <h3>Pembayaran</h3>
+  <table class="info-table" style="margin-bottom: 1.5rem;">
+    <tr>
+      <td><small>Total Pesanan</small></td>
+      <td><b style="font-size: 1.25rem;">Rp <%= Number(pesanan.total).toLocaleString('id-ID') %></b></td>
+    </tr>
+    <tr>
+      <td><small>Sudah Dibayar</small></td>
+      <td><b>Rp <%= Number(total_dibayar).toLocaleString('id-ID') %></b></td>
+    </tr>
+    <tr>
+      <td><small>Sisa</small></td>
+      <td>
+        <b class="<%= sisa > 0 ? 'text-danger' : 'text-success' %>" style="font-size: 1.25rem;">
+          Rp <%= Number(sisa).toLocaleString('id-ID') %>
+        </b>
+      </td>
+    </tr>
+  </table>
+
+  <% if (pembayaran.length > 0) { %>
+    <h4>Riwayat Pembayaran</h4>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Metode</th>
+          <th>Jumlah</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pembayaran.forEach(b => { %>
+          <tr>
+            <td><%= new Date(b.tgl_bayar).toLocaleDateString('id-ID') %></td>
+            <td><span class="badge-method <%= b.metode %>"><%= b.metode.toUpperCase() %></span></td>
+            <td><b>Rp <%= Number(b.jumlah).toLocaleString('id-ID') %></b></td>
+            <td>
+              <span class="pill <%= b.status === 'lunas' ? '' : b.status === 'batal' ? 'bad' : 'warn' %>">
+                <%= b.status %>
+              </span>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } %>
+
+  <% if (sisa > 0) { %>
+    <h4 style="margin-top: 1.5rem;">Catat Pembayaran</h4>
+    <form action="/pesanan/<%= pesanan.id_pesanan %>/bayar" method="POST" style="display: flex; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap;">
+      <select name="metode" required style="width: 150px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; font-family: inherit;">
+        <option value="tunai">Tunai</option>
+        <option value="QRIS">QRIS</option>
+        <option value="transfer">Transfer</option>
+      </select>
+      <input type="number" name="jumlah" value="<%= sisa %>" placeholder="Jumlah" min="1" max="<%= sisa %>" step="0.01" required style="flex: 1; min-width: 160px; max-width: 240px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; font-family: inherit;">
+      <button type="submit" class="pill-btn primary">Bayar Rp <%= Number(sisa).toLocaleString('id-ID') %></button>
+    </form>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

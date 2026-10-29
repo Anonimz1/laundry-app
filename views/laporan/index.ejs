@@ -1,0 +1,245 @@
+<%- include('../partials/header', { title: 'Laporan' }) %>
+<%
+  const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+  const ringkas = n => n === 0 ? '0' : n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + ' jt' : Math.round(n / 1e3) + ' rb';
+  const pct = (a, b) => b ? Math.min(100, Math.round(a / b * 100)) : 0;
+  const jumlah = arr => arr.reduce((s, x) => s + x, 0);
+
+  // cincin persen
+  const donut = p => {
+    const r = 24, c = 2 * Math.PI * r;
+    return '<svg viewBox="0 0 64 64" class="donut" aria-hidden="true">'
+      + '<circle cx="32" cy="32" r="' + r + '" class="d-bg"/>'
+      + '<circle cx="32" cy="32" r="' + r + '" class="d-fg" stroke-dasharray="' + (c * p / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 32 32)"/>'
+      + '<text x="32" y="36" text-anchor="middle">' + p + '%</text></svg>';
+  };
+
+  // garis: titik -> path SVG
+  const garis = (W, H) => (vals, max) => vals.map((v, i) => {
+    const x = vals.length > 1 ? i / (vals.length - 1) * W : W / 2;
+    const y = H - 8 - (max ? v / max * (H - 16) : 0);
+    return (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }).join(' ');
+
+  const besar = garis(600, 200);
+  const kecil = garis(300, 170);
+  const maxOf = vals => Math.max(1, ...vals);
+
+  const ymax = vals => {
+    const m = Math.max(0, ...vals);
+    const step = m >= 1e6 ? 5e5 : m >= 1e3 ? 5e4 : 5;
+    return Math.max(step * 2, Math.ceil(m / step) * step);
+  };
+
+  const warnaPie = ['#3b1494', '#6a2cf5', '#8b5cf6', '#b79cfb', '#d8c9fd'];
+  const warnaGaris = { layanan: '#3b1494', produk: '#6a2cf5', pengiriman: '#b79cfb' };
+  const namaMetode = { tunai: 'Tunai', QRIS: 'QRIS', transfer: 'Transfer' };
+  const totalPie = jumlah(komposisi.map(k => k.omzet));
+  const maxMetode = maxOf(metode.map(m => m.total));
+  const omzetHarian = harian.map(h => h.omzet);
+  const pesananHarian = harian.map(h => h.pesanan);
+%>
+
+<div class="top">
+  <div>
+    <h1>Laporan Laundry</h1>
+    <p class="sub">Omzet, pesanan, pembayaran, dan stok</p>
+  </div>
+  <div class="actions">
+    <button class="pill-btn" type="button" onclick="window.print()"><svg class="ic"><use href="#i-unduh"/></svg>Cetak</button>
+    <a class="pill-btn" href="/"><svg class="ic"><use href="#i-dashboard"/></svg>Dashboard</a>
+  </div>
+</div>
+
+<!-- Kartu angka -->
+<div class="kpis">
+  <div class="kpi">
+    <%- donut(pct(kpi.selesai, kpi.totalPesanan)) %>
+    <div><b><%= kpi.totalPesanan %></b><small>Pesanan, <%= kpi.selesai %> selesai</small></div>
+  </div>
+  <div class="kpi hot">
+    <%- donut(pct(kpi.dibayar, kpi.omzet)) %>
+    <div><b><%= ringkas(kpi.omzet) %></b><small>Omzet, <%= pct(kpi.dibayar, kpi.omzet) %>% sudah dibayar</small></div>
+  </div>
+  <div class="kpi">
+    <%- donut(pct(kpi.pelangganUlang, kpi.pelanggan)) %>
+    <div><b><%= kpi.pelanggan %></b><small>Pelanggan, <%= kpi.pelangganUlang %> kembali order</small></div>
+  </div>
+  <div class="kpi">
+    <%- donut(pct(kpi.menipis, kpi.produk)) %>
+    <div><b><%= kpi.menipis %></b><small>Produk stok menipis dari <%= kpi.produk %></small></div>
+  </div>
+</div>
+
+<div class="rep-grid r2">
+  <!-- Garis: 30 hari -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Tren 30 hari</h2><p class="sub">Total <%= rp(jumlah(omzetHarian)) %> dari <%= jumlah(pesananHarian) %> pesanan</p></div>
+      <div class="seg" data-group="g-tren">
+        <button type="button" class="on" data-key="omzet"><span></span>Omzet</span></button>
+        <button type="button" data-key="pesanan"><span>Pesanan</span></button>
+      </div>
+    </div>
+    <div data-group="g-tren">
+      <% [['omzet', omzetHarian], ['pesanan', pesananHarian]].forEach(([key, vals], i) => { %>
+        <svg class="plot" data-series="<%= key %>" viewBox="0 0 600 200" preserveAspectRatio="none" <%= i ? 'hidden' : '' %> role="img" aria-label="Tren <%= key %> 30 hari">
+          <% [8, 100, 192].forEach(y => { %><line x1="0" x2="600" y1="<%= y %>" y2="<%= y %>" class="grid"/><% }) %>
+          <path d="<%= besar(vals, maxOf(vals)) %>" class="ln" stroke="#6a2cf5" vector-effect="non-scaling-stroke"/>
+        </svg>
+      <% }) %>
+    </div>
+    <div class="xs"><% harian.forEach((h, i) => { %><span><%= i % 5 === 0 || i === harian.length - 1 ? h.label : '' %></span><% }) %></div>
+  </section>
+
+  <!-- Batang horizontal: metode bayar -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Metode bayar</h2><p class="sub">Nilai pembayaran masuk</p></div>
+    </div>
+    <% if (!metode.length) { %><p class="empty">Belum ada pembayaran.</p><% } %>
+    <% metode.forEach(m => { %>
+      <div class="hb">
+        <div class="hb-l"><span><%= namaMetode[m.metode] || m.metode %></span><b><%= ringkas(m.total) %></b></div>
+        <div class="hb-t"><i <%- `style="width:${Math.round(m.total / maxMetode * 100)}%"` %>></i></div>
+        <small><%= m.n %> transaksi</small>
+      </div>
+    <% }) %>
+  </section>
+
+  <!-- Multi garis: komponen omzet -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Komponen omzet</h2><p class="sub">6 bulan terakhir</p></div>
+    </div>
+    <% const semua = (bulanan || []).flatMap(b => (b.data || []).map(d => d.nilai)); const topM = maxOf(semua); %>
+    <svg class="plot" viewBox="0 0 300 170" preserveAspectRatio="none" role="img" aria-label="Komponen omzet per bulan">
+      <% [8, 85, 162].forEach(y => { %><line x1="0" x2="300" y1="<%= y %>" y2="<%= y %>" class="grid"/><% }) %>
+      <% (bulanan || []).forEach(b => { %>
+        <path d="<%= kecil((b.data || []).map(d => d.nilai), topM) %>" class="ln" stroke="<%= warnaGaris[b.key] %>" vector-effect="non-scaling-stroke"/>
+      <% }) %>
+    </svg>
+    <div class="xs"><% if (bulanan && bulanan.length && bulanan[0].data) { bulanan[0].data.forEach(d => { %><span><%= d.bulan %></span><% }) } %></div>
+    <div class="legend inline">
+      <% (bulanan || []).forEach(b => { %><span><i <%- `style="background:${warnaGaris[b.key]}"` %>></i><%= b.label %></span><% }) %>
+    </div>
+  </section>
+</div>
+
+<div class="rep-grid r3">
+  <!-- Batang vertikal: layanan -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Layanan terlaris</h2><p class="sub">Delapan layanan teratas</p></div>
+      <div class="seg" data-group="g-layanan">
+        <button type="button" class="on" data-key="omzet"><span>Omzet</span></button>
+        <button type="button" data-key="jml"><span>Jumlah</span></button>
+      </div>
+    </div>
+    <% if (!layanan.length) { %><p class="empty">Belum ada data penjualan.</p><% } %>
+    <div data-group="g-layanan">
+      <% [['omzet', 'omzet'], ['jml', 'jml']].forEach(([key, f], i) => { const nilai = layanan.map(l => l[f]); const top = ymax(nilai); %>
+        <div class="series" data-series="<%= key %>" <%= i ? 'hidden' : '' %>>
+          <div class="yl"><% [1, .75, .5, .25, 0].forEach(x => { %><span><%= key === 'omzet' ? ringkas(top * x) : Math.round(top * x) %></span><% }) %></div>
+          <div class="cols">
+            <% layanan.forEach(l => { %>
+              <div class="col" title="<%= l.nama %>: <%= key === 'omzet' ? rp(l.omzet) : l.jml %>"><i <%- `style="height:${Math.round(l[f] / top * 100)}%"` %>></i></div>
+            <% }) %>
+          </div>
+          <div class="xl long"><% layanan.forEach(l => { %><span title="<%= l.nama %>"><%= l.nama %></span><% }) %></div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <!-- Pie: komposisi per kategori -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Komposisi omzet</h2><p class="sub">Per kategori layanan dan produk</p></div>
+    </div>
+    <% if (!totalPie) { %><p class="empty">Belum ada data penjualan.</p><% } else { %>
+    <div class="pie-wrap">
+      <svg class="pie" viewBox="0 0 200 200" role="img" aria-label="Komposisi omzet per kategori">
+        <%
+          let a0 = -Math.PI / 2; const cx = 100, cy = 100, R = 92;
+          komposisi.forEach((k, i) => {
+            const frac = k.omzet / totalPie, a1 = a0 + frac * 2 * Math.PI;
+            const warna = warnaPie[i % warnaPie.length];
+            if (komposisi.length === 1) { %><circle cx="100" cy="100" r="92" fill="<%= warna %>"/><% }
+            else {
+              const x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0);
+              const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+              %><path d="M<%= cx %> <%= cy %> L<%= x0.toFixed(2) %> <%= y0.toFixed(2) %> A<%= R %> <%= R %> 0 <%= frac > .5 ? 1 : 0 %> 1 <%= x1.toFixed(2) %> <%= y1.toFixed(2) %> Z" fill="<%= warna %>" stroke="#fff" stroke-width="4" stroke-linejoin="round"><title><%= k.nama %>: <%= rp(k.omzet) %></title></path><%
+            }
+            a0 = a1;
+          });
+        %>
+      </svg>
+      <ul class="legend">
+        <% komposisi.forEach((k, i) => { %>
+          <li><i <%- `style="background:${warnaPie[i % warnaPie.length]}"` %>></i><span><%= k.nama %></span><b><%= pct(k.omzet, totalPie) %>%</b></li>
+        <% }) %>
+      </ul>
+    </div>
+    <% } %>
+  </section>
+</div>
+
+<!-- Tabel: pesanan belum lunas -->
+<section class="card" style="margin-top:16px">
+  <div class="card-h">
+    <div><h2>Pesanan belum lunas</h2><p class="sub">Urut dari yang paling lama masuk</p></div>
+  </div>
+  <% if (!belumLunas.length) { %><p class="empty">Semua pesanan sudah lunas.</p><% } else { %>
+  <table class="table">
+    <thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Tgl masuk</th><th>Total</th><th>Dibayar</th><th>Sisa</th></tr></thead>
+    <tbody>
+      <% belumLunas.forEach(b => { const sisa = b.total - b.dibayar; %>
+        <tr>
+          <td><a href="/pesanan/<%= b.id_pesanan %>">#<%= b.id_pesanan %></a></td>
+          <td><b><%= b.nama %></b></td>
+          <td><%= new Date(b.tgl_masuk).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) %></td>
+          <td><%= rp(b.total) %></td>
+          <td><%= rp(b.dibayar) %></td>
+          <td><span class="pill <%= b.dibayar > 0 ? 'warn' : 'bad' %>"><%= rp(sisa) %></span></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+
+<script>
+  // Tombol pilihan: ganti seri pada grup yang sama dengan animasi smooth
+  document.querySelectorAll('.seg[data-group]').forEach(seg => {
+    seg.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      
+      // Update button states dengan smooth transition
+      seg.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('on', b === btn);
+      });
+      
+      // Switch series dengan fade animation
+      document.querySelectorAll('div[data-group="' + seg.dataset.group + '"] [data-series]')
+        .forEach(s => { 
+          if (s.dataset.series !== btn.dataset.key) {
+            s.style.opacity = '0';
+            setTimeout(() => s.hidden = true, 300);
+          } else {
+            s.hidden = false;
+            s.style.opacity = '0';
+            s.style.animation = 'none';
+            requestAnimationFrame(() => {
+              setTimeout(() => {
+                s.style.opacity = '1';
+                s.style.animation = 'fadeIn 0.5s ease forwards';
+              }, 10);
+            });
+          }
+        });
+    });
+  });
+</script>
+<%- include('../partials/footer') %>

@@ -1,0 +1,66 @@
+<%- include('../partials/header', { title: 'Pesanan' }) %>
+
+<div class="top">
+  <div>
+    <h1>Pesanan</h1>
+    <p class="sub"><%= rows.length %> pesanan tercatat</p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn" href="/pesanan/tambah"><svg class="ic"><use href="#i-tambah"/></svg>Buat Pesanan</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<% if (success) { %>
+  <div class="alert"><%= success %></div>
+<% } %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Pelanggan</th>
+      <th>Tgl Masuk</th>
+      <th>Status</th>
+      <th>Total</th>
+      <th style="text-align:right">Aksi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (rows.length === 0) { %>
+      <tr>
+        <td colspan="5" style="text-align: center;"><p class="empty">Belum ada pesanan</p></td>
+      </tr>
+    <% } else { %>
+      <% rows.forEach(row => { %>
+        <tr>
+          <td>
+            <div class="nm">
+              <div class="av"><%= row.nama_pelanggan.charAt(0).toUpperCase() %></div>
+              <div><b><%= row.nama_pelanggan %></b><small>#<%= row.id_pesanan %> · <%= row.no_hp %></small></div>
+            </div>
+          </td>
+          <td><%= new Date(row.tgl_masuk).toLocaleDateString('id-ID') %></td>
+          <td>
+            <span class="pill <%= 
+              row.status_cucian === 'selesai' ? '' : 
+              row.status_cucian === 'siap' ? '' : 
+              row.status_cucian === 'diterima' ? 'mute' : 
+              'warn' 
+            %>">
+              <%= row.status_cucian %>
+            </span>
+          </td>
+          <td><b>Rp <%= Number(row.total).toLocaleString('id-ID') %></b></td>
+          <td style="text-align:right">
+            <a href="/pesanan/<%= row.id_pesanan %>" class="btn-link">Detail</a>
+          </td>
+        </tr>
+      <% }); %>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('../partials/footer') %>

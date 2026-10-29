@@ -1,0 +1,170 @@
+<%- include('../partials/header', { title: 'Pembayaran' }) %>
+<%
+  const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+  const fmt = d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+%>
+
+<div class="top">
+  <div>
+    <h1>Pembayaran</h1>
+    <p class="sub">Catat dan pantau pelunasan pesanan</p>
+  </div>
+</div>
+
+<!-- Ringkasan -->
+<div class="cards four">
+  <div class="kpi">
+    <div class="kpi-icon tunai"><svg class="ic"><use href="#i-uang"/></svg></div>
+    <div>
+      <span class="kpi-label">Total Ditagih</span>
+      <span class="kpi-val"><%= rp(ringkasan.ditagih) %></span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-icon success"><svg class="ic"><use href="#i-centang"/></svg></div>
+    <div>
+      <span class="kpi-label">Total Diterima</span>
+      <span class="kpi-val"><%= rp(ringkasan.diterima) %></span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-icon primary"><svg class="ic"><use href="#i-grafik"/></svg></div>
+    <div>
+      <span class="kpi-label">Lunas / Sebagian</span>
+      <span class="kpi-val"><%= ringkasan.lunas %> / <%= ringkasan.sebagian %></span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-icon warn"><svg class="ic"><use href="#i-peringatan"/></svg></div>
+    <div>
+      <span class="kpi-label">Dibatalkan</span>
+      <span class="kpi-val"><%= ringkasan.batal %></span>
+    </div>
+  </div>
+</div>
+
+<!-- Pesan -->
+<% if (err) { %>
+  <div class="alert alert-danger"><%= err %></div>
+<% } %>
+<% if (ok) { %>
+  <div class="alert alert-success"><%= ok %></div>
+<% } %>
+
+<div class="cards two">
+  <!-- Form catat pembayaran -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Catat pembayaran</h2><p class="sub">Terima pembayaran pelanggan</p></div>
+    </div>
+    <form method="POST" action="/pembayaran" class="form-pay">
+      <div class="form-group">
+        <label for="id_pesanan">Pesanan <span class="req">*</span></label>
+        <select name="id_pesanan" id="id_pesanan" required class="form-control">
+          <option value="">-- Pilih pesanan --</option>
+          <% belum.forEach(p => { %>
+            <option value="<%= p.id_pesanan %>">
+              #<%= p.id_pesanan %> - <%= p.nama %> (<%= rp(p.total - p.dibayar) %> sisa)
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="jumlah">Jumlah bayar <span class="req">*</span></label>
+        <input type="number" name="jumlah" id="jumlah" required min="1" class="form-control" placeholder="50000">
+      </div>
+      <div class="form-group">
+        <label for="metode">Metode <span class="req">*</span></label>
+        <select name="metode" id="metode" required class="form-control">
+          <option value="">-- Pilih metode --</option>
+          <option value="tunai">Tunai</option>
+          <option value="QRIS">QRIS</option>
+          <option value="transfer">Transfer Bank</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">💳 Catat Pembayaran</button>
+    </form>
+  </section>
+
+  <!-- Pesanan belum lunas -->
+  <section class="card">
+    <div class="card-h">
+      <div><h2>Pesanan belum lunas</h2><p class="sub">Prioritas penagihan</p></div>
+    </div>
+    <% if (!belum.length) { %>
+      <p class="empty">Semua pesanan sudah lunas! 🎉</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Pelanggan</th>
+              <th>Tanggal</th>
+              <th>Total</th>
+              <th>Dibayar</th>
+              <th>Sisa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% belum.forEach(p => { const sisa = p.total - p.dibayar; %>
+              <tr>
+                <td><a href="/pesanan/<%= p.id_pesanan %>">#<%= p.id_pesanan %></a></td>
+                <td><%= p.nama %></td>
+                <td><%= fmt(p.tgl_masuk) %></td>
+                <td><%= rp(p.total) %></td>
+                <td><%= rp(p.dibayar) %></td>
+                <td><strong class="text-warn"><%= rp(sisa) %></strong></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</div>
+
+<!-- Riwayat pembayaran -->
+<section class="card">
+  <div class="card-h">
+    <div><h2>Riwayat pembayaran</h2><p class="sub">50 transaksi terakhir</p></div>
+  </div>
+  <% if (!riwayat.length) { %>
+    <p class="empty">Belum ada riwayat pembayaran.</p>
+  <% } else { %>
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Pesanan</th>
+            <th>Pelanggan</th>
+            <th>Metode</th>
+            <th>Jumlah</th>
+            <th>Tanggal</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% riwayat.forEach(r => { %>
+            <tr>
+              <td>#<%= r.id_pembayaran %></td>
+              <td><a href="/pesanan/<%= r.id_pesanan %>">#<%= r.id_pesanan %></a></td>
+              <td><%= r.nama %></td>
+              <td><span class="badge badge-<%= r.metode %>"><%= r.metode %></span></td>
+              <td><%= rp(r.jumlah) %></td>
+              <td><%= fmt(r.tgl_bayar) %></td>
+              <td>
+                <span class="pill <%= r.status === 'lunas' ? '' : r.status === 'sebagian' ? 'warn' : 'mute' %>">
+                  <%= r.status %>
+                </span>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

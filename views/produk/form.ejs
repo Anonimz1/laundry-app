@@ -1,0 +1,51 @@
+<%- include('../partials/header', { title: (data.id_produk ? 'Edit' : 'Tambah') + ' Produk' }) %>
+
+<div class="top">
+  <div>
+    <h1><%= data.id_produk ? 'Edit' : 'Tambah' %> Produk</h1>
+    <p class="sub"><%= data.id_produk ? 'Ubah data produk' : 'Daftarkan produk baru' %></p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn mute" href="/produk">← Kembali</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<form action="<%= data.id_produk ? `/produk/${data.id_produk}/edit` : '/produk' %>" method="POST" class="form card">
+  <div class="form-group">
+    <label for="id_kategori">Kategori *</label>
+    <select id="id_kategori" name="id_kategori" required>
+      <option value="">-- Pilih Kategori --</option>
+      <% kategori.forEach(k => { %>
+        <option value="<%= k.id_kategori %>" <%= data.id_kategori == k.id_kategori ? 'selected' : '' %>>
+          <%= k.nama_kategori %>
+        </option>
+      <% }); %>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="nama_produk">Nama Produk *</label>
+    <input type="text" id="nama_produk" name="nama_produk" value="<%= data.nama_produk %>" required placeholder="Contoh: Deterjen Cair 1L">
+  </div>
+
+  <div class="form-group">
+    <label for="harga">Harga (Rp) *</label>
+    <input type="number" id="harga" name="harga" value="<%= data.harga %>" min="1" step="0.01" required placeholder="25000">
+  </div>
+
+  <div class="form-group">
+    <label for="stok">Stok *</label>
+    <input type="number" id="stok" name="stok" value="<%= data.stok %>" min="0" required placeholder="10">
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="pill-btn"><svg class="ic"><use href="#i-tambah"/></svg><%= data.id_produk ? 'Update Data' : 'Simpan Produk' %></button>
+    <a href="/produk" class="pill-btn mute">Batal</a>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>

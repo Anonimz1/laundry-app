@@ -1,0 +1,64 @@
+<%- include('../partials/header', { title: 'Produk' }) %>
+
+<div class="top">
+  <div>
+    <h1>Produk</h1>
+    <p class="sub"><%= rows.length %> produk tersedia</p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn" href="/produk/tambah"><svg class="ic"><use href="#i-tambah"/></svg>Tambah Produk</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<% if (success) { %>
+  <div class="alert"><%= success %></div>
+<% } %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nama Produk</th>
+      <th>Kategori</th>
+      <th>Harga</th>
+      <th>Stok</th>
+      <th style="text-align:right">Aksi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (rows.length === 0) { %>
+      <tr>
+        <td colspan="5" style="text-align: center;"><p class="empty">Belum ada data produk</p></td>
+      </tr>
+    <% } else { %>
+      <% rows.forEach(row => { %>
+        <tr>
+          <td>
+            <div class="nm">
+              <div class="av soft round"><svg class="ic"><use href="#i-produk"/></svg></div>
+              <b><%= row.nama_produk %></b>
+            </div>
+          </td>
+          <td><%= row.nama_kategori %></td>
+          <td><b>Rp <%= Number(row.harga).toLocaleString('id-ID') %></b></td>
+          <td>
+            <span class="pill <%= row.stok < 5 ? (row.stok <= 1 ? 'bad' : 'warn') : '' %>">
+              <%= row.stok %> unit
+            </span>
+          </td>
+          <td style="text-align:right">
+            <a href="/produk/<%= row.id_produk %>/edit" class="btn-link">Edit</a>
+            <form method="POST" action="/produk/<%= row.id_produk %>/hapus" style="display: inline;" onsubmit="return confirm('Yakin ingin menghapus produk ini?')">
+              <button type="submit" class="link-danger">Hapus</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('../partials/footer') %>

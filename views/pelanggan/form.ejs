@@ -1,0 +1,39 @@
+<%- include('../partials/header', { title: (data.id_pelanggan ? 'Edit' : 'Tambah') + ' Pelanggan' }) %>
+
+<div class="top">
+  <div>
+    <h1><%= data.id_pelanggan ? 'Edit' : 'Tambah' %> Pelanggan</h1>
+    <p class="sub"><%= data.id_pelanggan ? 'Ubah data pelanggan' : 'Daftarkan pelanggan baru' %></p>
+  </div>
+  <div class="actions">
+    <a class="pill-btn mute" href="/pelanggan">← Kembali</a>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert bad"><%= error %></div>
+<% } %>
+
+<form action="<%= data.id_pelanggan ? `/pelanggan/${data.id_pelanggan}/edit` : '/pelanggan' %>" method="POST" class="form card">
+  <div class="form-group">
+    <label for="nama">Nama Lengkap *</label>
+    <input type="text" id="nama" name="nama" value="<%= data.nama %>" required placeholder="Nama pelanggan">
+  </div>
+
+  <div class="form-group">
+    <label for="no_hp">No. HP *</label>
+    <input type="text" id="no_hp" name="no_hp" value="<%= data.no_hp %>" required pattern="[0-9]{10,15}" title="Nomor HP harus 10-15 digit" placeholder="08xxxxxxxxxx">
+  </div>
+
+  <div class="form-group">
+    <label for="alamat">Alamat *</label>
+    <textarea id="alamat" name="alamat" rows="3" required placeholder="Alamat lengkap"><%= data.alamat %></textarea>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="pill-btn"><svg class="ic"><use href="#i-tambah"/></svg><%= data.id_pelanggan ? 'Update Data' : 'Simpan Pelanggan' %></button>
+    <a href="/pelanggan" class="pill-btn mute">Batal</a>
+  </div>
+</form>
+
+<%- include('../partials/footer') %>
