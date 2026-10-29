@@ -2,11 +2,20 @@
   "name": "laundry-app",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "start": "node app.js" },
+  "scripts": {
+    "start": "node app.js",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:pull": "prisma db pull",
+    "test:db": "node test-db.js",
+    "test:prisma": "node test-prisma.js"
+  },
   "dependencies": {
+    "@prisma/client": "^7.10.1",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.11.0",
+    "prisma": "^8.0.0-rc.28"
   }
 }

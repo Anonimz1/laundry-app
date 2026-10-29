@@ -1,0 +1,163 @@
+// Prisma Schema untuk Laundry App
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Pelanggan {
+  id_pelanggan Int       @id @default(autoincrement())
+  nama         String    @db.VarChar(100)
+  no_hp        String    @unique @db.VarChar(15)
+  alamat       String    @db.VarChar(255)
+  created_at   DateTime  @default(now())
+  pesanan      Pesanan[]
+
+  @@map("pelanggan")
+}
+
+model Kategori {
+  id_kategori   Int       @id @default(autoincrement())
+  nama_kategori String    @unique @db.VarChar(50)
+  jenis         JenisKategori
+  layanan       Layanan[]
+  produk        Produk[]
+
+  @@map("kategori")
+}
+
+model Layanan {
+  id_layanan     Int              @id @default(autoincrement())
+  id_kategori    Int
+  nama_layanan   String           @db.VarChar(100)
+  harga          Decimal          @db.Decimal(10, 2)
+  satuan         SatuanLayanan
+  estimasi_hari  Int              @default(2) @db.TinyInt
+  kategori       Kategori         @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict)
+  detail_layanan DetailLayanan[]
+
+  @@map("layanan")
+}
+
+model Produk {
+  id_produk     Int            @id @default(autoincrement())
+  id_kategori   Int
+  nama_produk   String         @db.VarChar(100)
+  harga         Decimal        @db.Decimal(10, 2)
+  stok          Int            @default(0)
+  kategori      Kategori       @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict)
+  detail_produk DetailProduk[]
+
+  @@map("produk")
+}
+
+model Pesanan {
+  id_pesanan     Int             @id @default(autoincrement())
+  id_pelanggan   Int
+  tgl_masuk      DateTime        @default(now())
+  tgl_selesai    DateTime?
+  status_cucian  StatusCucian    @default(diterima)
+  total          Decimal         @default(0) @db.Decimal(12, 2)
+  pelanggan      Pelanggan       @relation(fields: [id_pelanggan], references: [id_pelanggan], onUpdate: Cascade, onDelete: Restrict)
+  detail_layanan DetailLayanan[]
+  detail_produk  DetailProduk[]
+  pembayaran     Pembayaran[]
+  pengiriman     Pengiriman[]
+
+  @@map("pesanan")
+}
+
+model DetailLayanan {
+  id_pesanan   Int
+  id_layanan   Int
+  jumlah       Decimal @db.Decimal(6, 2)
+  harga_satuan Decimal @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(12, 2)
+  pesanan      Pesanan @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade)
+  layanan      Layanan @relation(fields: [id_layanan], references: [id_layanan], onUpdate: Cascade, onDelete: Restrict)
+
+  @@id([id_pesanan, id_layanan])
+  @@map("detail_layanan")
+}
+
+model DetailProduk {
+  id_pesanan   Int
+  id_produk    Int
+  qty          Int
+  harga_satuan Decimal @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(12, 2)
+  pesanan      Pesanan @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade)
+  produk       Produk  @relation(fields: [id_produk], references: [id_produk], onUpdate: Cascade, onDelete: Restrict)
+
+  @@id([id_pesanan, id_produk])
+  @@map("detail_produk")
+}
+
+model Pembayaran {
+  id_pembayaran Int            @id @default(autoincrement())
+  id_pesanan    Int
+  metode        MetodePembayaran
+  jumlah        Decimal        @db.Decimal(12, 2)
+  tgl_bayar     DateTime       @default(now())
+  status        StatusPembayaran @default(lunas)
+  pesanan       Pesanan        @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Restrict)
+
+  @@map("pembayaran")
+}
+
+model Pengiriman {
+  id_pengiriman Int              @id @default(autoincrement())
+  id_pesanan    Int
+  jenis         JenisPengiriman
+  alamat        String           @db.VarChar(255)
+  biaya         Decimal          @default(0) @db.Decimal(10, 2)
+  status        StatusPengiriman @default(dijadwalkan)
+  pesanan       Pesanan          @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("pengiriman")
+}
+
+// Enums
+enum JenisKategori {
+  LAYANAN
+  PRODUK
+}
+
+enum SatuanLayanan {
+  kg
+  pcs
+}
+
+enum StatusCucian {
+  diterima
+  dicuci
+  disetrika
+  siap
+  selesai
+}
+
+enum MetodePembayaran {
+  tunai
+  QRIS
+  transfer
+}
+
+enum StatusPembayaran {
+  lunas
+  sebagian
+  batal
+}
+
+enum JenisPengiriman {
+  jemput
+  antar
+}
+
+enum StatusPengiriman {
+  dijadwalkan
+  dalam_perjalanan
+  selesai
+}

@@ -4,6 +4,10 @@ node_modules/
 # Environment variables
 .env
 
+# Prisma
+prisma/.env
+.env.local
+
 # Logs
 *.log
 npm-debug.log*
