@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD - Laundry App Database</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            font-size: 1rem;
+        }
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        .content {
+            padding: 30px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .diagram {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        .info-card {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .relationship-list {
+            list-style: none;
+            padding: 0;
+        }
+        .relationship-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .relationship-list li strong {
+            color: #667eea;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover {
+            background: #f5f5f5;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .badge-pk { background: #ffd700; color: #333; }
+        .badge-fk { background: #87ceeb; color: #333; }
+        .badge-uk { background: #90ee90; color: #333; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-card .label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Entity Relationship Diagram</h1>
+            <p>Laundry App Database Schema</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('diagram')">🎨 Diagram</button>
+            <button class="tab" onclick="showTab('relationships')">🔗 Relationships</button>
+            <button class="tab" onclick="showTab('tables')">📋 Tables</button>
+            <button class="tab" onclick="showTab('stats')">📊 Statistics</button>
+        </div>
+
+        <div class="content">
+            <!-- TAB 1: DIAGRAM -->
+            <div id="diagram" class="tab-content active">
+                <div class="info-card">
+                    <h3>🎯 Database Structure</h3>
+                    <p>Diagram ini menunjukkan struktur database lengkap dengan relasi antar tabel. Gunakan scroll horizontal jika diagram terlalu lebar.</p>
+                </div>
+                
+                <div class="diagram">
+                    <pre class="mermaid">
+erDiagram
+    PELANGGAN ||--o{ PESANAN : "membuat"
+    KATEGORI ||--o{ LAYANAN : "memiliki"
+    KATEGORI ||--o{ PRODUK : "memiliki"
+    PESANAN ||--o{ DETAIL_LAYANAN : "berisi"
+    PESANAN ||--o{ DETAIL_PRODUK : "berisi"
+    PESANAN ||--o{ PEMBAYARAN : "memiliki"
+    PESANAN ||--o{ PENGIRIMAN : "memiliki"
+    LAYANAN ||--o{ DETAIL_LAYANAN : "digunakan"
+    PRODUK ||--o{ DETAIL_PRODUK : "digunakan"
+
+    PELANGGAN {
+        int id_pelanggan PK
+        varchar nama
+        varchar no_hp UK
+        varchar alamat
+        timestamp created_at
+    }
+
+    KATEGORI {
+        int id_kategori PK
+        varchar nama_kategori UK
+        enum jenis
+    }
+
+    LAYANAN {
+        int id_layanan PK
+        int id_kategori FK
+        varchar nama_layanan
+        decimal harga
+        enum satuan
+        tinyint estimasi_hari
+    }
+
+    PRODUK {
+        int id_produk PK
+        int id_kategori FK
+        varchar nama_produk
+        decimal harga
+        int stok
+    }
+
+    PESANAN {
+        int id_pesanan PK
+        int id_pelanggan FK
+        datetime tgl_masuk
+        datetime tgl_selesai
+        enum status_cucian
+        decimal total
+    }
+
+    DETAIL_LAYANAN {
+        int id_pesanan PK_FK
+        int id_layanan PK_FK
+        decimal jumlah
+        decimal harga_satuan
+        decimal subtotal
+    }
+
+    DETAIL_PRODUK {
+        int id_pesanan PK_FK
+        int id_produk PK_FK
+        int qty
+        decimal harga_satuan
+        decimal subtotal
+    }
+
+    PEMBAYARAN {
+        int id_pembayaran PK
+        int id_pesanan FK
+        enum metode
+        decimal jumlah
+        datetime tgl_bayar
+        enum status
+    }
+
+    PENGIRIMAN {
+        int id_pengiriman PK
+        int id_pesanan FK
+        enum jenis
+        varchar alamat
+        decimal biaya
+        enum status
+    }
+                    </pre>
+                </div>
+            </div>
+
+            <!-- TAB 2: RELATIONSHIPS -->
+            <div id="relationships" class="tab-content">
+                <div class="info-card">
+                    <h3>🔗 Database Relationships</h3>
+                    <p>Daftar lengkap relasi antar tabel dengan cardinality dan foreign key constraints.</p>
+                </div>
+
+                <h3>One-to-Many Relationships</h3>
+                <ul class="relationship-list">
+                    <li>
+                        <strong>PELANGGAN → PESANAN</strong> (1:N)<br>
+                        Satu pelanggan bisa membuat banyak pesanan<br>
+                        <code>pesanan.id_pelanggan → pelanggan.id_pelanggan</code>
+                    </li>
+                    <li>
+                        <strong>KATEGORI → LAYANAN</strong> (1:N)<br>
+                        Satu kategori bisa memiliki banyak layanan<br>
+                        <code>layanan.id_kategori → kategori.id_kategori</code>
+                    </li>
+                    <li>
+                        <strong>KATEGORI → PRODUK</strong> (1:N)<br>
+                        Satu kategori bisa memiliki banyak produk<br>
+                        <code>produk.id_kategori → kategori.id_kategori</code>
+                    </li>
+                    <li>
+                        <strong>PESANAN → PEMBAYARAN</strong> (1:N)<br>
+                        Satu pesanan bisa memiliki banyak pembayaran (cicilan)<br>
+                        <code>pembayaran.id_pesanan → pesanan.id_pesanan</code>
+                    </li>
+                    <li>
+                        <strong>PESANAN → PENGIRIMAN</strong> (1:N)<br>
+                        Satu pesanan bisa memiliki banyak pengiriman (jemput & antar)<br>
+                        <code>pengiriman.id_pesanan → pesanan.id_pesanan</code>
+                    </li>
+                </ul>
+
+                <h3>Many-to-Many Relationships</h3>
+                <ul class="relationship-list">
+                    <li>
+                        <strong>PESANAN ↔ LAYANAN</strong> (M:N)<br>
+                        Via junction table: <strong>detail_layanan</strong><br>
+                        <code>detail_layanan(id_pesanan, id_layanan)</code>
+                    </li>
+                    <li>
+                        <strong>PESANAN ↔ PRODUK</strong> (M:N)<br>
+                        Via junction table: <strong>detail_produk</strong><br>
+                        <code>detail_produk(id_pesanan, id_produk)</code>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- TAB 3: TABLES -->
+            <div id="tables" class="tab-content">
+                <div class="info-card">
+                    <h3>📋 Database Tables</h3>
+                    <p>Daftar semua tabel dengan kolom, tipe data, dan constraints.</p>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Table Name</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Records</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>pelanggan</strong></td>
+                            <td><span class="badge" style="background:#4CAF50;color:white">Master</span></td>
+                            <td>Customer master data</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td><strong>kategori</strong></td>
+                            <td><span class="badge" style="background:#4CAF50;color:white">Master</span></td>
+                            <td>Categories for services & products</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td><strong>layanan</strong></td>
+                            <td><span class="badge" style="background:#4CAF50;color:white">Master</span></td>
+                            <td>Laundry services (cuci, setrika, etc)</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>produk</strong></td>
+                            <td><span class="badge" style="background:#4CAF50;color:white">Master</span></td>
+                            <td>Products for sale (deterjen, pewangi, etc)</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pesanan</strong></td>
+                            <td><span class="badge" style="background:#2196F3;color:white">Transaction</span></td>
+                            <td>Main order/transaction</td>
+                            <td>9</td>
+                        </tr>
+                        <tr>
+                            <td><strong>detail_layanan</strong></td>
+                            <td><span class="badge" style="background:#FF9800;color:white">Detail</span></td>
+                            <td>Order line items for services</td>
+                            <td>11</td>
+                        </tr>
+                        <tr>
+                            <td><strong>detail_produk</strong></td>
+                            <td><span class="badge" style="background:#FF9800;color:white">Detail</span></td>
+                            <td>Order line items for products</td>
+                            <td>6</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pembayaran</strong></td>
+                            <td><span class="badge" style="background:#2196F3;color:white">Transaction</span></td>
+                            <td>Payments for orders</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pengiriman</strong></td>
+                            <td><span class="badge" style="background:#2196F3;color:white">Transaction</span></td>
+                            <td>Delivery/pickup for orders</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>pengeluaran</strong></td>
+                            <td><span class="badge" style="background:#2196F3;color:white">Transaction</span></td>
+                            <td>Business expenses</td>
+                            <td>6</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 4: STATISTICS -->
+            <div id="stats" class="tab-content">
+                <div class="info-card">
+                    <h3>📊 Database Statistics</h3>
+                    <p>Statistik dan informasi teknis database.</p>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="number">10</div>
+                        <div class="label">Tables</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">5</div>
+                        <div class="label">Functions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">11</div>
+                        <div class="label">Procedures</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">24</div>
+                        <div class="label">Triggers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">8</div>
+                        <div class="label">Views</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">7</div>
+                        <div class="label">1:N Relations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">2</div>
+                        <div class="label">M:N Relations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">3</div>
+                        <div class="label">MySQL Users</div>
+                    </div>
+                </div>
+
+                <h3>Stored Functions</h3>
+                <table>
+                    <tr>
+                        <th>Function</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr><td>sisa_tagihan(id)</td><td>Returns remaining unpaid amount</td></tr>
+                    <tr><td>hitung_total_pesanan(id)</td><td>Calculate order total</td></tr>
+                    <tr><td>omzet_periode(start, end)</td><td>Revenue for period</td></tr>
+                    <tr><td>pengeluaran_periode(start, end)</td><td>Expenses for period</td></tr>
+                    <tr><td>laba_periode(start, end)</td><td>Profit for period</td></tr>
+                </table>
+
+                <h3>Database Views</h3>
+                <table>
+                    <tr>
+                        <th>View</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr><td>v_nota</td><td>Order receipts with items</td></tr>
+                    <tr><td>v_rincian_pesanan</td><td>Order details with customer</td></tr>
+                    <tr><td>v_pesanan_belum_lunas</td><td>Unpaid orders</td></tr>
+                    <tr><td>v_stok_menipis</td><td>Low stock products (< 5)</td></tr>
+                    <tr><td>v_laba_bulanan</td><td>Monthly profit breakdown</td></tr>
+                    <tr><td>v_omzet_bulanan</td><td>Monthly revenue breakdown</td></tr>
+                    <tr><td>v_pelanggan_samar</td><td>Customer fuzzy search</td></tr>
+                    <tr><td>v_item_jual</td><td>Saleable items (services + products)</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            er: {
+                useMaxWidth: true
+            }
+        });
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

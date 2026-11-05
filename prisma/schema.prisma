@@ -1,4 +1,10 @@
-// Prisma Schema untuk Laundry App
+// =====================================================================
+// Prisma Schema - Clean Up Laundry (Final Version)
+// Aligned with project_database.sql requirements
+// Includes: 10 tables, proper indexes, constraints
+// NOTE: Subtotal as GENERATED columns will be added via SQL migration
+// =====================================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,24 +14,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// ENTITIES
+// ============================================
+
 model Pelanggan {
   id_pelanggan Int       @id @default(autoincrement())
   nama         String    @db.VarChar(100)
-  no_hp        String    @unique @db.VarChar(15)
+  no_hp        String    @unique(map: "uq_pelanggan_no_hp") @db.VarChar(15)
   alamat       String    @db.VarChar(255)
   created_at   DateTime  @default(now())
+  
   pesanan      Pesanan[]
 
+  @@index([nama], map: "idx_pelanggan_nama")
   @@map("pelanggan")
 }
 
 model Kategori {
-  id_kategori   Int       @id @default(autoincrement())
-  nama_kategori String    @unique @db.VarChar(50)
+  id_kategori   Int              @id @default(autoincrement())
+  nama_kategori String           @db.VarChar(50)
   jenis         JenisKategori
+  
   layanan       Layanan[]
   produk        Produk[]
+  pengeluaran   Pengeluaran[]
 
+  @@unique([nama_kategori, jenis], map: "uq_kategori_nama_jenis")
   @@map("kategori")
 }
 
@@ -36,7 +51,8 @@ model Layanan {
   harga          Decimal          @db.Decimal(10, 2)
   satuan         SatuanLayanan
   estimasi_hari  Int              @default(2) @db.TinyInt
-  kategori       Kategori         @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict)
+  
+  kategori       Kategori         @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict, map: "fk_layanan_kategori")
   detail_layanan DetailLayanan[]
 
   @@map("layanan")
@@ -48,9 +64,11 @@ model Produk {
   nama_produk   String         @db.VarChar(100)
   harga         Decimal        @db.Decimal(10, 2)
   stok          Int            @default(0)
-  kategori      Kategori       @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict)
+  
+  kategori      Kategori       @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict, map: "fk_produk_kategori")
   detail_produk DetailProduk[]
 
+  @@index([stok], map: "idx_produk_stok")
   @@map("produk")
 }
 
@@ -61,23 +79,29 @@ model Pesanan {
   tgl_selesai    DateTime?
   status_cucian  StatusCucian    @default(diterima)
   total          Decimal         @default(0) @db.Decimal(12, 2)
-  pelanggan      Pelanggan       @relation(fields: [id_pelanggan], references: [id_pelanggan], onUpdate: Cascade, onDelete: Restrict)
+  
+  pelanggan      Pelanggan       @relation(fields: [id_pelanggan], references: [id_pelanggan], onUpdate: Cascade, onDelete: Restrict, map: "fk_pesanan_pelanggan")
   detail_layanan DetailLayanan[]
   detail_produk  DetailProduk[]
   pembayaran     Pembayaran[]
   pengiriman     Pengiriman[]
 
+  @@index([tgl_masuk], map: "idx_pesanan_tgl")
+  @@index([status_cucian, tgl_masuk], map: "idx_pesanan_status_tgl")
+  @@index([id_pelanggan, tgl_masuk], map: "idx_pesanan_pel_tgl")
   @@map("pesanan")
 }
 
+// Weak entities - subtotal will be GENERATED COLUMN via migration
 model DetailLayanan {
   id_pesanan   Int
   id_layanan   Int
-  jumlah       Decimal @db.Decimal(6, 2)
-  harga_satuan Decimal @db.Decimal(10, 2)
-  subtotal     Decimal @db.Decimal(12, 2)
-  pesanan      Pesanan @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade)
-  layanan      Layanan @relation(fields: [id_layanan], references: [id_layanan], onUpdate: Cascade, onDelete: Restrict)
+  jumlah       Decimal  @db.Decimal(6, 2)
+  harga_satuan Decimal  @db.Decimal(10, 2)
+  subtotal     Decimal  @db.Decimal(12, 2) // Will be: AS (jumlah * harga_satuan) STORED
+  
+  pesanan      Pesanan  @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade, map: "fk_dl_pesanan")
+  layanan      Layanan  @relation(fields: [id_layanan], references: [id_layanan], onUpdate: Cascade, onDelete: Restrict, map: "fk_dl_layanan")
 
   @@id([id_pesanan, id_layanan])
   @@map("detail_layanan")
@@ -87,24 +111,27 @@ model DetailProduk {
   id_pesanan   Int
   id_produk    Int
   qty          Int
-  harga_satuan Decimal @db.Decimal(10, 2)
-  subtotal     Decimal @db.Decimal(12, 2)
-  pesanan      Pesanan @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade)
-  produk       Produk  @relation(fields: [id_produk], references: [id_produk], onUpdate: Cascade, onDelete: Restrict)
+  harga_satuan Decimal  @db.Decimal(10, 2)
+  subtotal     Decimal  @db.Decimal(12, 2) // Will be: AS (qty * harga_satuan) STORED
+  
+  pesanan      Pesanan  @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade, map: "fk_dp_pesanan")
+  produk       Produk   @relation(fields: [id_produk], references: [id_produk], onUpdate: Cascade, onDelete: Restrict, map: "fk_dp_produk")
 
   @@id([id_pesanan, id_produk])
   @@map("detail_produk")
 }
 
 model Pembayaran {
-  id_pembayaran Int            @id @default(autoincrement())
+  id_pembayaran Int              @id @default(autoincrement())
   id_pesanan    Int
   metode        MetodePembayaran
-  jumlah        Decimal        @db.Decimal(12, 2)
-  tgl_bayar     DateTime       @default(now())
+  jumlah        Decimal          @db.Decimal(12, 2)
+  tgl_bayar     DateTime         @default(now())
   status        StatusPembayaran @default(lunas)
-  pesanan       Pesanan        @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Restrict)
+  
+  pesanan       Pesanan          @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Restrict, map: "fk_bayar_pesanan")
 
+  @@index([id_pesanan, status], map: "idx_bayar_pesanan_status")
   @@map("pembayaran")
 }
 
@@ -115,15 +142,35 @@ model Pengiriman {
   alamat        String           @db.VarChar(255)
   biaya         Decimal          @default(0) @db.Decimal(10, 2)
   status        StatusPengiriman @default(dijadwalkan)
-  pesanan       Pesanan          @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade)
+  
+  pesanan       Pesanan          @relation(fields: [id_pesanan], references: [id_pesanan], onUpdate: Cascade, onDelete: Cascade, map: "fk_kirim_pesanan")
 
+  @@unique([id_pesanan, jenis], map: "uq_pengiriman_pesanan_jenis")
   @@map("pengiriman")
 }
 
-// Enums
+model Pengeluaran {
+  id_pengeluaran  Int              @id @default(autoincrement())
+  id_kategori     Int
+  tgl_pengeluaran DateTime         @db.Date
+  keterangan      String           @db.VarChar(255)
+  jumlah          Decimal          @db.Decimal(12, 2)
+  metode          MetodePembayaran
+  
+  kategori        Kategori         @relation(fields: [id_kategori], references: [id_kategori], onUpdate: Cascade, onDelete: Restrict, map: "fk_pengeluaran_kategori")
+
+  @@index([tgl_pengeluaran], map: "idx_pengeluaran_tgl")
+  @@map("pengeluaran")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
 enum JenisKategori {
   LAYANAN
   PRODUK
+  PENGELUARAN
 }
 
 enum SatuanLayanan {

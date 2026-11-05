@@ -55,41 +55,121 @@ app.use('/pelanggan', pelangganRoutes(pelangganController));
 // Dashboard route (temporary until migrated)
 app.get('/', async (req, res) => {
   try {
-    const pelangganRepo = diContainer.resolve('pelangganRepository');
-    const produkRepo = diContainer.resolve('produkRepository');
-    const pesananRepo = diContainer.resolve('pesananRepository');
-
+    // Fetch all dashboard data in parallel
     const [
-      totalPelanggan,
-      totalPesanan,
-      pesananAktif,
-      pesananSelesai,
-      produkStokRendah,
-      totalOmzet
+      terlaris,
+      terbaru,
+      bayar,
+      stok,
+      omzetBulanan
     ] = await Promise.all([
-      pelangganRepo.count(),
-      pesananRepo.count(),
-      pesananRepo.countActive(),
-      pesananRepo.countCompleted(),
-      produkRepo.countLowStock(),
-      pesananRepo.getTotalRevenue()
+      // Layanan terlaris dengan detail lengkap
+      prisma.$queryRaw`
+        SELECT l.nama_layanan,
+               l.estimasi_hari,
+               k.nama_kategori,
+               COUNT(*) AS jml,
+               SUM(dl.jumlah) AS total_kg,
+               SUM(dl.subtotal) AS omzet
+        FROM detail_layanan dl
+        INNER JOIN layanan l ON l.id_layanan = dl.id_layanan
+        INNER JOIN kategori k ON l.id_kategori = k.id_kategori
+        GROUP BY l.id_layanan, l.nama_layanan, l.estimasi_hari, k.nama_kategori
+        ORDER BY omzet DESC
+        LIMIT 5
+      `,
+      
+      // Pesanan terbaru - query langsung
+      prisma.$queryRaw`
+        SELECT p.id_pesanan, pl.nama, p.status_cucian, p.tgl_masuk, p.total
+        FROM pesanan p
+        JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan
+        ORDER BY p.tgl_masuk DESC
+        LIMIT 5
+      `,
+      
+      // Pesanan belum lunas dengan total dan dibayar
+      prisma.$queryRaw`
+        SELECT p.id_pesanan, 
+               pl.nama, 
+               p.total,
+               IFNULL(SUM(pb.jumlah), 0) as dibayar
+        FROM pesanan p
+        JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan
+        LEFT JOIN pembayaran pb ON p.id_pesanan = pb.id_pesanan
+        GROUP BY p.id_pesanan, pl.nama, p.total
+        HAVING dibayar < p.total
+        ORDER BY p.tgl_masuk DESC
+        LIMIT 5
+      `,
+      
+      // Stok menipis
+      prisma.$queryRaw`
+        SELECT p.nama_produk, k.nama_kategori, p.stok
+        FROM produk p
+        JOIN kategori k ON p.id_kategori = k.id_kategori
+        WHERE p.stok < 5
+        ORDER BY p.stok
+        LIMIT 10
+      `,
+      
+      // Omzet bulanan 6 bulan terakhir
+      prisma.$queryRaw`
+        SELECT 
+          DATE_FORMAT(p.tgl_masuk, '%Y-%m') as bulan,
+          SUM(p.total) as omzet
+        FROM pesanan p
+        WHERE p.tgl_masuk >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(p.tgl_masuk, '%Y-%m')
+        ORDER BY bulan DESC
+        LIMIT 6
+      `
     ]);
 
-    res.render('dashboard', {
-      stats: {
-        totalPelanggan,
-        totalPesanan,
-        pesananAktif,
-        pesananSelesai,
-        produkStokRendah,
-        totalOmzet
+    // Omzet per kategori layanan (untuk series kedua di chart)
+    const omzetProduk = await prisma.$queryRaw`
+      SELECT 
+        DATE_FORMAT(p.tgl_masuk, '%Y-%m') as bulan,
+        SUM(IFNULL(dp.subtotal, 0)) as omzet
+      FROM pesanan p
+      LEFT JOIN detail_produk dp ON p.id_pesanan = dp.id_pesanan
+      WHERE p.tgl_masuk >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+      GROUP BY DATE_FORMAT(p.tgl_masuk, '%Y-%m')
+      ORDER BY bulan DESC
+      LIMIT 6
+    `;
+
+    // Format data for chart series
+    const series = [
+      {
+        key: 'layanan',
+        label: 'Layanan',
+        data: omzetBulanan.reverse().map(row => ({
+          bulan: row.bulan.substring(5), // 2026-10 -> 10
+          nilai: Number(row.omzet || 0)
+        }))
       },
-      recentPesanan: [],
-      produkRendah: []
+      {
+        key: 'produk',
+        label: 'Produk',
+        data: omzetProduk.reverse().map(row => ({
+          bulan: row.bulan.substring(5),
+          nilai: Number(row.omzet || 0)
+        }))
+      }
+    ];
+
+    res.render('dashboard', {
+      terlaris,
+      terbaru,
+      bayar,
+      stok,
+      series
     });
   } catch (error) {
     console.error('Error loading dashboard:', error);
-    res.status(500).send('Error loading dashboard');
+    console.error('Stack:', error.stack);
+    res.status(500).send('Error loading dashboard: ' + error.message);
   }
 });
 

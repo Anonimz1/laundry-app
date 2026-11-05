@@ -92,7 +92,7 @@
         </div>
         <div class="cols">
           <% s.data.forEach(d => { %>
-            <div class="col" title="<%= d.bulan %>: <%= rp(d.nilai) %>"><i <%- `style="height:${Math.round(d.nilai / top * 100)}%"` %>></i></div>
+            <div class="col" title="<%= d.bulan %>: <%= rp(d.nilai) %>"><i style="height:<%= Math.round(d.nilai / top * 100) %>%"></i></div>
           <% }) %>
         </div>
         <div class="xl"><% s.data.forEach(d => { %><span><%= d.bulan %></span><% }) %></div>
@@ -115,7 +115,7 @@
           <div><b><%= t.nama_layanan %></b><small>Estimasi <%= t.estimasi_hari %> hari</small></div>
         </div>
         <span><%= t.nama_kategori %></span>
-        <div class="bar"><span><%= Number(t.jml) %></span><div class="t"><i <%- `style="width:${persen}%"` %>></i></div><span><%= persen %>%</span></div>
+        <div class="bar"><span><%= Number(t.jml) %></span><div class="t"><i style="width:<%= persen %>%"></i></div><span><%= persen %>%</span></div>
         <div class="val"><%= ringkas(Number(t.omzet)) %></div>
       </div>
     <% }) %>
